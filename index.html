@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대학 논술 - 논숲</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css">
+<style>
+  /* ===== 디자인 토큰 (nonsup.com/university 실측값) ===== */
+  :root {
+    --bg-page: #F8FAF8;
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F9FAFB;
+    --text-primary: #111827;
+    --text-secondary: #4B5563;
+    --text-tertiary: #6B7280;
+    --text-disabled: #9CA3AF;
+    --border-primary: #E5E7EB;
+    --border-strong: #9CA3AF;
+    --brand: #008B48;
+    --brand-hover: #007A3F;
+    --brand-subtle: #EEF8F2;
+    --info-subtle: #EEF5FD;
+    --info: #1D6FD1;
+    --warn-subtle: #FFF4E5;
+    --warn: #D97706;
+    --heart: #EF4444;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Noto Sans KR", "Malgun Gothic", sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  svg { display: block; flex-shrink: 0; }
+  ul { list-style: none; }
+  [hidden] { display: none !important; }
+
+  .container { max-width: 1264px; margin: 0 auto; padding: 50px 32px 48px; }
+
+  /* ===== 상단 메뉴 (GNB) ===== */
+  /* nonsup.com 실측값 그대로 */
+  .gnb { position: sticky; top: 0; z-index: 100; height: 80px; background: var(--bg-primary); border-bottom: 1px solid #F1F5F9; }
+  .gnb-inner { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; max-width: 1200px; height: 100%; margin: 0 auto; padding: 0 24px; }
+  .logo { display: flex; align-items: flex-start; gap: 6px; justify-self: start; cursor: pointer; font-family: SUIT, Pretendard, sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -0.22px; line-height: normal; color: var(--text-primary); }
+  .gnb-menu { display: flex; align-items: center; align-self: stretch; gap: 48px; }
+  .gnb-menu > li { position: relative; display: flex; align-items: center; height: 100%; }
+  .gnb-link { display: flex; align-items: center; gap: 4px; padding: 10px 12px; font-size: 16px; font-weight: 500; line-height: 25.6px; color: var(--text-secondary); cursor: pointer; transition: color .15s; }
+  .gnb-link:hover, .gnb-menu > li.on .gnb-link { color: var(--brand); }
+  .gnb-link svg { transition: transform .15s; }
+  .gnb-menu > li:hover .gnb-link svg { transform: rotate(180deg); }
+  .gnb-drop { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); padding-top: 6px; opacity: 0; visibility: hidden; transition: opacity .2s, visibility .2s; }
+  .gnb-menu > li:hover .gnb-drop { opacity: 1; visibility: visible; }
+  .gnb-drop ul { display: flex; flex-direction: column; gap: 6px; width: 160px; padding: 6px; border-radius: 12px; background: var(--bg-primary); box-shadow: 0 4px 12px rgba(17, 24, 39, .12); }
+  .gnb-drop li { display: flex; align-items: center; justify-content: center; height: 40px; border-radius: 8px; font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: background-color .15s, color .15s; }
+  .gnb-drop li:hover { background: #E6F4ED; color: var(--brand); }
+  .gnb-user { display: flex; align-items: center; justify-self: end; gap: 4px; }
+  .gnb-point { display: flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border: 1px solid #DDF393; border-radius: 999px; background: #F7FCE9; color: var(--text-secondary); font-size: 12px; font-weight: 500; line-height: 18px; cursor: pointer; }
+  .gnb-name { display: flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 14px; font-weight: 500; line-height: 22.4px; color: var(--text-secondary); cursor: pointer; transition: color .15s; }
+  .gnb-name:hover { color: var(--brand); }
+
+  /* ===== 목록: 제목 ===== */
+  .list-head { display: flex; flex-direction: column; gap: 4px; margin-bottom: 24px; }
+  .list-head h2 { font-size: 24px; font-weight: 600; line-height: 33.6px; letter-spacing: 0.12px; color: #000; }
+  .list-head p { font-size: 14px; font-weight: 400; line-height: 22.4px; color: var(--text-secondary); }
+
+  /* ===== 목록: 툴바 (필터 / 개수 / 검색 / 정렬) ===== */
+  .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .toolbar-left { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 20px; }
+  .toolbar-right { display: flex; align-items: center; gap: 8px; }
+
+  .btn-filter {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 44px; padding: 0 12px;
+    border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-primary);
+    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+    transition: border-color .15s, background-color .15s;
+  }
+  .btn-filter:hover { border-color: var(--border-strong); background: var(--bg-secondary); }
+
+  .count { display: flex; align-items: center; gap: 4px; font-size: 14px; line-height: 22.4px; color: var(--text-secondary); }
+  .count strong { font-weight: 500; color: var(--brand); }
+  .count button { display: inline-flex; color: var(--text-secondary); }
+
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    width: 280px; height: 44px; padding: 0 16px;
+    border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-primary);
+    transition: border-color .15s;
+  }
+  .search:hover { border-color: var(--border-strong); }
+  .search:focus-within { border-color: var(--brand); }
+  .search button { display: flex; color: var(--text-tertiary); }
+  .search input {
+    width: 100%; min-width: 0; border: 0; outline: 0; background: transparent;
+    font: inherit; font-size: 14px; font-weight: 500; color: var(--text-primary);
+  }
+  .search input::placeholder { color: var(--text-disabled); }
+
+  .select {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    width: 120px; height: 44px; padding: 0 16px;
+    border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-primary);
+    font-size: 14px; font-weight: 500; color: var(--text-secondary);
+  }
+  .select:hover { border-color: var(--border-strong); }
+
+  /* ===== 목록: 카드 그리드 ===== */
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 24px; }
+
+  .card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 20px;
+    height: 400px; padding: 20px;
+    background: var(--bg-primary); border-radius: 12px;
+    border-top: 2px solid var(--school);   /* 학교 시그니처 컬러 */
+    overflow: hidden; cursor: pointer;
+    transition: transform .3s, box-shadow .3s;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(17, 24, 39, .08); }
+
+  .card-top { display: flex; flex-direction: column; gap: 20px; width: 100%; }
+  .card-meta { display: flex; flex-direction: column; gap: 8px; }
+  .card-meta-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+  .chip {
+    display: inline-flex; align-items: center; height: 28px; padding: 0 12px; min-width: 0;
+    border: 1px solid color-mix(in srgb, var(--school) 20%, transparent); border-radius: 4px;
+    background: var(--bg-primary); color: var(--school);
+    font-size: 14px; font-weight: 500; line-height: 19.6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .heart { display: inline-flex; color: var(--text-disabled); }
+  .heart svg { fill: none; }
+  .heart.on { color: var(--heart); }
+  .heart.on svg { fill: currentColor; }
+
+  .year { font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
+
+  .card-title-area { display: flex; flex-direction: column; justify-content: space-between; height: 120px; }
+  .card-title {
+    height: 60px; font-size: 20px; font-weight: 600; line-height: 30px; color: var(--text-primary);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; height: 20px; }  /* 태그 자리 (현재 데이터 없음) */
+
+  .info {
+    display: flex; flex-direction: column; justify-content: center; gap: 4px; flex-shrink: 0;
+    width: 100%; height: 68px; padding: 0 10px;
+    background: var(--bg-secondary); border-radius: 8px;
+  }
+  .info-row { display: flex; align-items: center; gap: 24px; white-space: nowrap; font-size: 14px; font-weight: 500; line-height: 22.4px; color: var(--text-secondary); }
+  .info-row span { display: flex; align-items: center; gap: 4px; }
+  .info-row svg { color: var(--text-disabled); }
+  .info-len { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+  .info-len .label { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-disabled); }
+  .info-len .value { font-size: 14px; font-weight: 500; line-height: 22.4px; color: var(--text-secondary); }
+
+  .card-foot { margin-top: auto; width: 100%; padding-top: 19px; border-top: 1px solid var(--border-primary); }
+  .card-foot-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 36px; }
+  .point { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; line-height: 22.4px; color: var(--text-primary); }
+  .btn-primary {
+    width: 97px; height: 36px; flex-shrink: 0;
+    border-radius: 8px; background: var(--brand); color: #fff;
+    font-size: 14px; font-weight: 500;
+    transition: background-color .15s;
+  }
+  .btn-primary:hover { background: var(--brand-hover); }
+
+  /* ===== 상세: 레이아웃 ===== */
+  .detail { padding-top: 20px; }
+
+  /* 2단 (인프런 강의 상세 형식 참고): 상단 = 시험 정보 / 좌측 = 탭 / 우측 = 응시 카드 + 이 대학의 다른 시험(스크롤해도 따라옴) */
+  .d-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-areas: "head head" "main side"; column-gap: 24px; align-items: start; }
+  .d-side { margin-top: 16px; }   /* 탭 영역(.panel)과 같은 선에서 시작 */
+  .d-head { grid-area: head; min-width: 0; }
+  .d-main { grid-area: main; min-width: 0; }
+  .d-side { grid-area: side; position: sticky; top: 96px; max-height: calc(100vh - 112px); overflow-y: auto; scrollbar-width: none; }
+
+  /* 응시 카드: 필수 정보(찜 · 포인트 · 응시하기 · 시험 구성)만 */
+  .take-card { padding: 24px; border-radius: 12px; background: var(--bg-primary); border-top: 2px solid var(--school); }
+  .take-top { display: flex; align-items: center; justify-content: space-between; }
+  .d-point { display: flex; align-items: center; gap: 8px; font-size: 22px; font-weight: 700; line-height: 30px; color: var(--text-primary); white-space: nowrap; }
+  .d-point svg { width: 30px; height: 30px; }
+  .btn-heart { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--text-disabled); transition: color .15s; }
+  .btn-heart:hover { color: var(--text-tertiary); }
+  .btn-heart.on:hover { color: var(--heart); }
+  .btn-heart svg { fill: none; }
+  .btn-heart.on { color: var(--heart); }
+  .btn-heart.on svg { fill: currentColor; }
+  .btn-take { width: 100%; height: 48px; margin-top: 16px; font-size: 16px; }
+
+  .take-info { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-primary); display: flex; flex-direction: column; gap: 10px; }
+  .take-info > div { display: flex; align-items: center; font-size: 14px; line-height: 22.4px; }
+  .take-info dt { display: flex; align-items: center; gap: 6px; width: 112px; flex-shrink: 0; color: var(--text-tertiary); }
+  .take-info dt svg { color: var(--text-disabled); }
+  .take-info dd { font-weight: 500; color: var(--text-primary); }
+
+  /* 기획 확인용 안내 (실제 화면에는 없음) */
+  .proto-note { margin-bottom: 16px; padding: 8px 12px; border: 1px dashed #C4B5FD; border-radius: 8px; background: #F5F3FF; color: #5B21B6; font-size: 13px; line-height: 20px; }
+
+  .detail-meta { display: flex; align-items: center; gap: 12px; }
+  .detail-meta .year { font-size: 14px; line-height: 19.6px; }
+  .detail-title { margin-top: 14px; font-size: 28px; font-weight: 700; line-height: 38px; letter-spacing: -0.3px; }
+
+  /* 문제 특징: 제목 아래 설명글 (피그마 Dialog-More 기준) */
+  .feature { margin-top: 6px; font-size: 15px; font-weight: 400; line-height: 24px; color: var(--text-secondary); }
+
+  /* ===== 상세: 탭 ===== */
+  .panel { margin-top: 16px; background: var(--bg-primary); border-radius: 12px; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border-primary); padding: 0 4px; position: sticky; top: 80px; z-index: 20; background: var(--bg-primary); border-radius: 12px 12px 0 0; }
+  .tab {
+    position: relative; flex: 0 0 25%; display: flex;   /* 탭 수가 줄어도 폭은 그대로(왼쪽부터 채움) */ align-items: center; justify-content: center; gap: 6px;
+    height: 52px; font-size: 15px; font-weight: 500; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab + .tab::before { content: ""; position: absolute; left: 0; top: 18px; height: 16px; width: 1px; background: var(--border-primary); }
+  .tab:hover { color: var(--text-primary); }
+  .tab.on { color: var(--brand); font-weight: 700; border-bottom-color: var(--brand); }
+  /* 자료 미등록 → 비활성 (잠금과 구분: 자물쇠 없음 + 흐린 글자 + '준비 중' 표시) */
+  .tab.disabled { color: #C5CAD3; cursor: not-allowed; }
+  .tab.disabled:hover { color: #C5CAD3; }
+  .tab .soon { padding: 1px 6px; border-radius: 4px; background: #F3F4F6; color: var(--text-disabled); font-size: 11px; font-weight: 500; }
+  .tab[data-tip]:hover::after {
+    content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 5;
+    padding: 6px 10px; border-radius: 6px; background: #1F2937; color: #fff; font-size: 12px; font-weight: 400; white-space: nowrap;
+  }
+
+  .tab-body { padding: 28px 24px 32px; }
+  /* 섹션 제목: 번호 대신 왼쪽 초록 포인트 바 */
+  .sec-title { display: flex; align-items: center; gap: 8px; margin: 36px 0 14px; font-size: 17px; font-weight: 700; line-height: 24px; letter-spacing: -0.2px; color: var(--text-primary); }
+  .sec-title::before { content: ""; width: 3px; height: 15px; border-radius: 2px; background: var(--brand); }
+  .sec-title:first-child { margin-top: 0; }
+  .body-text { font-size: 15px; line-height: 26px; color: var(--text-secondary); }
+
+  .kv-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .kv { border: 1px solid var(--border-primary); border-radius: 8px; overflow: hidden; font-size: 14px; }
+  .kv > div { display: flex; align-items: center; min-height: 40px; }
+  .kv > div + div { border-top: 1px solid var(--border-primary); }
+  .kv dt { display: flex; align-items: center; gap: 10px; align-self: stretch; width: 140px; flex-shrink: 0; padding: 0 16px; background: var(--bg-secondary); color: var(--text-secondary); }
+  .kv dt svg { color: var(--text-tertiary); }
+  .kv dd { padding: 0 16px; color: var(--text-primary); }
+  .kv dd.strong { font-weight: 600; }
+  .kv dd small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--text-tertiary); }
+
+  .tbl { width: 100%; border: 1px solid var(--border-primary); border-radius: 8px; border-collapse: separate; border-spacing: 0; overflow: hidden; font-size: 14px; }
+  .tbl th, .tbl td { height: 40px; padding: 8px 16px; text-align: center; border-top: 1px solid var(--border-primary); }
+  .tbl th + th, .tbl td + td { border-left: 1px solid var(--border-primary); }
+  .tbl thead th { border-top: 0; background: var(--bg-secondary); font-weight: 500; color: var(--text-secondary); }
+  .tbl tbody th { font-weight: 600; background: #FCFCFD; }
+  .tbl td.left { text-align: left; color: var(--text-secondary); line-height: 22px; }
+
+  .note-box { padding: 14px 20px; border-radius: 8px; background: var(--bg-secondary); }
+  .dots li { position: relative; padding-left: 16px; font-size: 14px; line-height: 26px; color: var(--text-secondary); }
+  .dots li::before { content: ""; position: absolute; left: 3px; top: 11px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+  .q-block { padding: 18px 20px; border: 1px solid var(--border-primary); border-radius: 10px; }
+  .q-block + .q-block { margin-top: 12px; }
+  .q-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .q-head b { font-size: 16px; font-weight: 700; }
+  .q-badge { padding: 2px 8px; border-radius: 4px; background: var(--brand-subtle); color: var(--brand); font-size: 12px; font-weight: 600; }
+  .q-meta { margin-left: auto; font-size: 13px; color: var(--text-tertiary); }
+  .q-sub { margin: 12px 0 4px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+  .q-block .tbl { margin-top: 4px; }
+
+  /* ===== 상세: 버튼 / 태그 / 이 대학의 다른 시험 ===== */
+  .btn-lg { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 8px; font-size: 15px; font-weight: 600; transition: background-color .15s, border-color .15s; }
+  .btn-lg.solid { background: var(--brand); color: #fff; }
+  .btn-lg.solid:hover { background: var(--brand-hover); }
+
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border: 1px solid var(--border-primary); border-radius: 8px; background: var(--bg-primary); font-size: 14px; color: var(--text-secondary); }
+  .chip { gap: 6px; flex-shrink: 0; }
+  .ai-mark { display: inline-flex; align-items: center; gap: 1px; }
+
+  /* 이 대학의 다른 시험: 우측 응시 카드 아래 (학교 칩 + 학년도 / 시험 제목), 데이터 있을 때만 */
+  .rel-card { margin-top: 16px; padding: 20px 12px 12px; border-radius: 12px; background: var(--bg-primary); }
+  .rel-card h2 { display: flex; align-items: center; gap: 8px; padding: 0 12px; font-size: 16px; font-weight: 700; }
+  .related { margin-top: 8px; }
+  .related li { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background-color .15s; }
+  .related li:hover { background: #E6F4ED; }
+  .related-meta { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .related-title { font-size: 15px; font-weight: 500; line-height: 24px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ===== 반응형 ===== */
+  @media (max-width: 1279px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1023px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .search { flex: 1; width: auto; }
+    .gnb-menu { display: none; }
+    .d-grid { grid-template-columns: 1fr; grid-template-areas: "head" "side" "main"; }
+    .d-side { position: static; max-height: none; margin-top: 20px; }
+  }
+  @media (max-width: 639px) {
+    .container { padding: 50px 16px 48px; }
+    .detail { padding-top: 12px; }
+    .gnb-inner { grid-template-columns: auto 1fr; padding: 0 16px; }
+    .grid { grid-template-columns: 1fr; gap: 16px; }
+    .detail-title { font-size: 24px; line-height: 34px; }
+    .tabs { overflow-x: auto; }
+    .tab { flex: 0 0 auto; padding: 0 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="gnb">
+  <div class="gnb-inner">
+    <div class="logo">
+      <svg width="18.9" height="26" viewBox="0 0 18.9 26" fill="none"><path d="M0 4.75C0 2.12665 2.12665 0 4.75 0V0C7.37335 0 9.5 2.12665 9.5 4.75V26H0V4.75Z" fill="#B5E82A"/><path d="M4.75 0C7.37335 0 9.5 2.12665 9.5 4.75V25.9775L9.49609 25.9795L0 5.59082V4.75C0 2.12665 2.12665 0 4.75 0Z" fill="url(#logoGrad)"/><path d="M9.4 4.75C9.4 2.12665 11.5266 0 14.15 0V0C16.7734 0 18.9 2.12665 18.9 4.75V26H9.4V4.75Z" fill="#008B48"/><defs><linearGradient id="logoGrad" x1="1.47778" y1="4.90124" x2="9.59207" y2="26.8457" gradientUnits="userSpaceOnUse"><stop stop-color="#B5E82A"/><stop offset="1" stop-color="#008B48"/></linearGradient></defs></svg>
+      논숲
+    </div>
+    <ul class="gnb-menu">
+      <li class="on"><a class="gnb-link" data-go="list">대학 논술</a></li>
+      <li><a class="gnb-link">논술 일정</a></li>
+      <li>
+        <a class="gnb-link">고객 센터 <span data-ic="chevDown" data-size="16"></span></a>
+        <div class="gnb-drop"><ul><li>공지사항</li><li>자주 묻는 질문</li><li>1:1 문의</li></ul></div>
+      </li>
+      <li><a class="gnb-link">성장 리포트</a></li>
+    </ul>
+    <div class="gnb-user">
+      <a class="gnb-point">
+        <svg width="24" height="27" viewBox="0 0 24 27" fill="none"><circle cx="12" cy="14.6438" r="12" fill="#B5E82A"/><circle cx="8.80326" cy="12.9041" r="2.08219" fill="white"/><circle cx="8.80329" cy="12.9041" r="1.53425" fill="#008B48"/><circle cx="9.57047" cy="12.4658" r="0.328767" fill="white"/><circle cx="15.1595" cy="12.9041" r="2.08219" fill="white"/><circle cx="15.1595" cy="12.9041" r="1.53425" fill="#008B48"/><circle cx="15.9265" cy="12.4658" r="0.328767" fill="white"/><path d="M10.9951 14.9863C11.3315 15.2344 12.197 15.5817 12.9677 14.9863" stroke="#008B48" stroke-width="0.219178" stroke-linecap="round"/><circle cx="11" cy="2" r="2" transform="rotate(90 11 2)" fill="#B5E82A"/><circle cx="14" cy="2" r="2" transform="rotate(90 14 2)" fill="#B5E82A"/></svg>
+        9,500개
+      </a>
+      <button type="button" class="gnb-name"><span>이인수</span><span data-ic="chevDown" data-size="12"></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 목록 화면 ================= -->
+<main class="container" id="view-list">
+  <div class="list-head">
+    <h2>대학 논술 목록</h2>
+    <p>논숲에서 제공하는 모든 대학 논술을 확인해 보세요.</p>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <button type="button" class="btn-filter">필터 <span data-ic="funnel" data-size="16"></span></button>
+      <div class="count">
+        <span>총 <strong id="count">16</strong>개의 시험</span>
+        <button type="button" aria-label="시험 유형 안내"><span data-ic="info" data-size="16"></span></button>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <form class="search" onsubmit="return false">
+        <button type="submit" aria-label="검색"><span data-ic="search" data-size="20"></span></button>
+        <input type="text" placeholder="학교명, 시험 제목 검색">
+      </form>
+      <button type="button" class="select"><span>최신순</span><span data-ic="chevDown" data-size="20"></span></button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<!-- ================= 문제 상세보기 화면 ================= -->
+<main class="container detail" id="view-detail" hidden></main>
+
+<script>
+  /* =====================================================================
+     1. 데이터
+     ===================================================================== */
+
+  // 주제 묶음 (더미). 문제 특징 / 관련 교과 / 핵심 개념이 여기서 나옴
+  const THEMES = {
+    ai: {
+      topic: '인공지능 기술의 확산',
+      feature: 'AI의 사회적 영향을 다양한 관점에서 분석하고 자신의 견해를 논증하는 문제입니다.',
+      subjects: ['국어', '화법과 작문', '문학', '독서', '사회·문화', '경제', '철학', '생활과 윤리', '미술'],
+      concepts: ['AI', '사회적 영향', '윤리적 쟁점', '기술과 인간', '미래사회', '과학기술의 윤리', '디지털 사회', '인간 중심 가치'],
+    },
+    justice: {
+      topic: '공정성과 분배 정의',
+      feature: '공정과 분배 정의에 대한 상반된 관점을 비교하고 사회 현상에 적용해 평가하는 문제입니다.',
+      subjects: ['국어', '독서', '사회·문화', '정치와 법', '경제', '생활과 윤리', '윤리와 사상'],
+      concepts: ['분배 정의', '공정성', '능력주의', '사회 불평등', '기회의 평등', '복지 제도'],
+    },
+    community: {
+      topic: '개인의 자유와 공동체의 가치',
+      feature: '개인의 자유와 공동체의 가치가 충돌하는 상황을 분석하고 해결 방향을 논증하는 문제입니다.',
+      subjects: ['국어', '화법과 작문', '독서', '통합사회', '생활과 윤리', '정치와 법'],
+      concepts: ['개인과 공동체', '자유와 책임', '공공선', '시민 참여', '사회적 연대', '지속가능성'],
+    },
+  };
+
+  /* 시험 데이터 (기출변형 1개 + 기출문제 1개)
+     - liked : 찜 여부
+     - ai    : true면 기출변형 (학교 배지에 반짝이+AI 표시). 생략하면 기출문제
+     - docs  : 탭별 자료 등록 여부 (false면 해당 탭 비활성). 생략하면 전부 등록
+     - noMeta: true면 문제 특징·관련 교과·핵심 개념·이 대학의 다른 시험 데이터가 없는 시험
+     - noRelated: true면 이 대학의 다른 시험이 없는 경우 (우측 카드 비노출)
+     - lens  : 문제별 적정 분량 [최소 글자, 최대 글자] (실서비스 API 값)
+     - docs  : 탭별 자료 등록 여부 (false면 해당 탭 비활성)
+     - scores: 문제별 배점. 생략하면 1,000점을 문제 수로 자동 분배 */
+  const EXAMS = [
+    { school: '성신여자대학교',     color: '#004E96', year: 2026, title: '성신여자대학교 인문 모의논술',       questions: 2, minutes: 100, length: '1,600 ~ 2,000자', point: 50, liked: true,  theme: 'justice', ai: true, lens: [[800, 1000], [800, 1000]] },
+    { school: '숙명여자대학교',     color: '#004E96', year: 2026, title: '숙명여자대학교 인문 모의논술',       questions: 4, minutes: 100, length: '1,620 ~ 1,980자', point: 50, liked: true,  theme: 'ai', docs: { intent: false, explain: false, rubric: false }, noRelated: true, scores: [280, 250, 250, 220], lens: [[270, 330], [540, 660], [270, 330], [540, 660]] },
+  ];
+
+  const TOTAL_SCORE = 1000;
+
+  // 문제 유형 (더미). 문제 수에 맞춰 골라 씀
+  const Q_TYPES = {
+    summary: { name: '요약형',       intent: '제시문의 핵심 논지를 정확히 파악하고 간결하게 재구성하는 능력을 평가합니다.',                 how: '제시문마다 중심 주장과 근거를 한 문장씩 정리한 뒤, 공통 기준을 세워 묶어 서술합니다.',           miss: '제시문 문장을 그대로 옮겨 적거나, 자신의 의견을 섞어 쓰는 경우 감점됩니다.' },
+    compare: { name: '비교·분석형',  intent: '서로 다른 관점의 공통점과 차이점을 기준을 세워 분석하는 능력을 평가합니다.',                   how: '비교 기준을 먼저 밝히고, 기준별로 두 관점을 나란히 대응시켜 서술합니다.',                       miss: '각 제시문을 따로따로 요약만 하고 비교 기준을 제시하지 않는 경우가 많습니다.' },
+    critique:{ name: '자료 해석형',  intent: '도표·사례 등 자료를 해석하고 이를 근거로 특정 관점을 평가하는 능력을 평가합니다.',             how: '자료에서 읽어낸 사실을 먼저 정리하고, 그 사실이 어느 관점을 뒷받침하거나 반박하는지 연결합니다.', miss: '자료의 수치를 나열만 하고 의미를 해석하지 않으면 높은 점수를 받기 어렵습니다.' },
+    opinion: { name: '견해 논술형',  intent: '앞선 분석을 바탕으로 자신의 견해를 세우고 타당한 근거로 논증하는 능력을 평가합니다.',           how: '입장을 첫 문단에서 분명히 밝히고, 제시문의 논거를 활용해 근거 → 예상 반론 → 재반박 순으로 전개합니다.', miss: '제시문과 무관한 배경지식 위주로 쓰거나, 양쪽 입장을 절충만 하고 결론이 흐려지는 경우 감점됩니다.' },
+  };
+  const Q_SETS = { 1: ['opinion'], 2: ['compare', 'opinion'], 3: ['summary', 'compare', 'opinion'], 4: ['summary', 'compare', 'critique', 'opinion'] };
+
+  /* =====================================================================
+     2. 아이콘
+     ===================================================================== */
+  const P = {
+    heart:    '<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"/>',
+    file:     '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
+    fileText: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+    clock:    '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+    pencil:   '<path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>',
+    star:     '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>',
+    funnel:   '<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/>',
+    search:   '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+    info:     '<circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><path d="M12 8h.01"/>',
+    alert:    '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    chevDown: '<path d="m6 9 6 6 6-6"/>',
+    chevRight:'<path d="m9 18 6-6-6-6"/>',
+    chevLeft: '<path d="m15 18-6-6 6-6"/>',
+    book:     '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+    bulb:     '<path d="M15 14c.2-1 .7-1.700 1.500-2.500 1-.9 1.500-2.200 1.500-3.500A6 6 0 0 0 6 8c0 1 .2 2.200 1.500 3.500.7.7 1.300 1.500 1.500 2.500"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+    link:     '<path d="M10 13a5 5 0 0 0 7.540.540l3-3a5 5 0 0 0-7.070-7.070l-1.720 1.710"/><path d="M14 11a5 5 0 0 0-7.540-.540l-3 3a5 5 0 0 0 7.070 7.070l1.710-1.710"/>',
+    gradCap:  '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+    lock:     '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  };
+  const POINT_SVG = '<svg width="30" height="30" viewBox="0 0 30 30" fill="none"><circle cx="15" cy="15" r="15" fill="#008B48"/><mask id="pm" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="30" height="30"><circle cx="15" cy="15" r="15" fill="#008B48"/></mask><g mask="url(#pm)"><circle cx="14.9999" cy="26.6891" r="17.1" fill="#B5E82A"/></g><circle cx="10.9587" cy="19.1782" r="2.60274" fill="white"/><circle cx="10.9589" cy="19.1781" r="1.91781" fill="#008B48"/><circle cx="11.9179" cy="18.6302" r="0.410959" fill="white"/><circle cx="18.904" cy="19.1782" r="2.60274" fill="white"/><circle cx="18.9043" cy="19.1781" r="1.91781" fill="#008B48"/><circle cx="19.8632" cy="18.6302" r="0.410959" fill="white"/><path d="M13.6987 21.7808C14.1192 22.0909 15.2011 22.525 16.1645 21.7808" stroke="#008B48" stroke-width="0.365297" stroke-linecap="round"/><ellipse cx="13.4932" cy="9.24651" rx="1.71233" ry="1.71233" transform="rotate(90 13.4932 9.24651)" fill="#B5E82A"/><ellipse cx="16.3697" cy="9.24651" rx="1.71233" ry="1.71233" transform="rotate(90 16.3697 9.24651)" fill="#B5E82A"/></svg>';
+
+  // 기출변형(AI) 표시: 학교 배지 안 왼쪽에 '반짝이 + AI' (피그마 Card/Uni/Badge 기준, 아이콘 12px)
+  const AI_MARK = '<span class="ai-mark"><svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path stroke-width="1.6" d="M5 3.300 6.100 5.900 8.700 7 6.100 8.100 5 10.700 3.900 8.100 1.300 7 3.900 5.900Z"/><path fill="none" stroke-width="1.100" d="M10 1.100v2.600M8.700 2.400h2.600"/></svg>AI</span>';
+
+  function ic(name, size = 16, stroke = 2) {
+    if (name === 'point') return POINT_SVG;
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${P[name]}</svg>`;
+  }
+  // HTML에 적어둔 <span data-ic="..."> 자리에 아이콘 넣기
+  document.querySelectorAll('[data-ic]').forEach(el => { el.outerHTML = ic(el.dataset.ic, +el.dataset.size || 16); });
+
+  /* =====================================================================
+     3. 목록 화면
+     ===================================================================== */
+  function cardHTML(e, i) {
+    return `
+    <article class="card" style="--school:${e.color}" data-idx="${i}">
+      <div class="card-top">
+        <div class="card-meta">
+          <div class="card-meta-row">
+            <span class="chip">${e.ai ? AI_MARK : ''}${e.school}</span>
+            <button type="button" class="heart${e.liked ? ' on' : ''}" aria-label="찜하기">${ic('heart', 20, 1.5)}</button>
+          </div>
+          <p class="year">${e.year}학년도</p>
+        </div>
+        <div class="card-title-area">
+          <h3 class="card-title">${e.title}</h3>
+          <div class="card-tags"></div>
+        </div>
+      </div>
+      <div class="info">
+        <div class="info-row">
+          <span>${ic('file')}${e.questions}문제</span>
+          <span>${ic('clock')}${e.minutes}분</span>
+        </div>
+        <div class="info-len">
+          <span class="label">${ic('pencil')}작성 분량</span>
+          <span class="value">${e.length}</span>
+        </div>
+      </div>
+      <div class="card-foot">
+        <div class="card-foot-row">
+          <div class="point">${POINT_SVG}<span>${e.point}개</span></div>
+          <button type="button" class="btn-primary">응시하기</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  const $list = document.getElementById('view-list');
+  const $detail = document.getElementById('view-detail');
+  const $grid = document.getElementById('grid');
+  $grid.innerHTML = EXAMS.map(cardHTML).join('');
+  document.getElementById('count').textContent = EXAMS.length;
+
+  $grid.addEventListener('click', (ev) => {
+    const heart = ev.target.closest('.heart');
+    if (heart) { const ex = EXAMS[heart.closest('.card').dataset.idx]; ex.liked = !ex.liked; heart.classList.toggle('on', ex.liked); return; }   // 찜 토글
+    const card = ev.target.closest('.card');
+    if (card) openDetail(EXAMS[card.dataset.idx]);              // 카드 클릭 → 문제 상세보기
+  });
+
+  /* =====================================================================
+     4. 문제 상세보기 화면
+     ===================================================================== */
+  const TABS = [
+    { key: 'overview', label: '시험 개요' },
+    { key: 'intent',   label: '출제의도' },
+    { key: 'explain',  label: '문제해설' },
+    { key: 'rubric',   label: '공식 채점기준' },
+  ];
+  let current = null;       // 지금 보고 있는 시험
+  let currentTab = 'overview';
+
+  const num = n => n.toLocaleString('ko-KR');
+
+  // 문제별 배점·분량·유형 만들기
+  function buildQuestions(e) {
+    const n = e.questions;
+    const types = Q_SETS[n] || Q_SETS[4];
+    return Array.from({ length: n }, (_, i) => {
+      let score;
+      if (e.scores) score = e.scores[i];
+      else {
+        const base = Math.floor(TOTAL_SCORE / n / 50) * 50;
+        score = i === n - 1 ? TOTAL_SCORE - base * (n - 1) : base;   // 남는 점수는 마지막 문제에
+      }
+      const [min, max] = e.lens[i];
+      return { no: i + 1, score, len: `${num(min)} ~ ${num(max)}자`, type: Q_TYPES[types[i]] };
+    });
+  }
+
+  function examState(e) {
+    const docs = Object.assign({ intent: true, explain: true, rubric: true }, e.docs);
+    return { docs };
+  }
+
+  // 탭 한 개의 상태: on(열람 가능) / disabled(자료 미등록)
+  function tabStatus(key, st) {
+    if (key === 'overview') return 'on';
+    if (!st.docs[key]) return 'disabled';
+    return 'on';
+  }
+
+  function openDetail(e) {
+    current = e;
+    currentTab = 'overview';
+    renderDetail();
+    $list.hidden = true;
+    $detail.hidden = false;
+    window.scrollTo(0, 0);
+  }
+  function openList() {
+    $grid.innerHTML = EXAMS.map(cardHTML).join('');
+    $detail.hidden = true;
+    $list.hidden = false;
+    window.scrollTo(0, 0);
+  }
+
+  function renderDetail() {
+    const e = current, th = THEMES[e.theme], st = examState(e), qs = buildQuestions(e);
+    const examType = e.title.includes('모의') ? '모의논술' : '기출 논술';
+    const baseTitle = e.title;
+
+    // 자료가 없는 탭은 아예 비노출. '시험 개요' 탭은 항상 노출 (하나만 남아도 탭 줄 유지)
+    const shownTabs = TABS.filter(t => tabStatus(t.key, st) === 'on');
+    const tabsHTML = `<div class="tabs" role="tablist">${shownTabs.map(t => `<button type="button" class="tab${t.key === currentTab ? ' on' : ''}" data-tab="${t.key}">${t.label}</button>`).join('')}</div>`;
+
+    // 기획 확인용 상태 설명
+    const missing = TABS.filter(t => tabStatus(t.key, st) === 'disabled').map(t => t.label);
+    const stateText = [
+      missing.length ? `자료 미등록(탭 비노출): ${missing.join(', ')}` : '모든 자료 등록됨',
+      e.noMeta ? '문제 특징·교과·개념·이 대학의 다른 시험 없음' : (e.noRelated ? '이 대학의 다른 시험 없음' : ''),
+    ].filter(Boolean).join(' · ');
+
+    // 이 대학의 다른 시험: 같은 대학의 다른 학년도 기출문제 + 기출변형 (noMeta 시험은 없음)
+    const related = (e.noMeta || e.noRelated) ? [] : [
+      { year: e.year + 1 },
+      { year: e.year + 1, ai: true },
+      { year: e.year - 1 },
+      { year: e.year - 2 },
+    ];
+    const feature = e.noMeta ? '' : th.feature;
+    const chip = `<span class="chip">${e.ai ? AI_MARK : ''}${e.school}</span>`;
+    // 찜(하트)은 로그인 상태에서만 노출 (비로그인 시 비노출 예정)
+    const heartBtn = `<button type="button" class="btn-heart${e.liked ? ' on' : ''}" aria-label="찜하기">${ic('heart', 24, 1.5)}</button>`;
+
+    $detail.style.setProperty('--school', e.color);
+    $detail.innerHTML = `
+      <div class="proto-note">기획 확인용 (실제 화면에는 없음) — 이 시험의 상태: <b>${stateText}</b></div>
+
+
+      <div class="d-grid">
+        <!-- 좌측 상단: 시험 정보 -->
+        <header class="d-head">
+          <div class="detail-meta">${chip}<span class="year">${e.year}학년도</span></div>
+          <h1 class="detail-title">${e.title}</h1>
+          ${feature ? `<p class="feature">${feature}</p>` : ''}
+        </header>
+
+        <!-- 우측: 응시 카드 -->
+        <aside class="d-side">
+          <div class="take-card">
+            <div class="take-top">
+              <span class="d-point">${POINT_SVG}${e.point}개</span>
+              ${heartBtn}
+            </div>
+            <button type="button" class="btn-lg solid btn-take">응시하기</button>
+            <dl class="take-info">
+              <div><dt>${ic('file')}문제 수</dt><dd>${e.questions}문제</dd></div>
+              <div><dt>${ic('clock')}시험 시간</dt><dd>${e.minutes}분</dd></div>
+              <div><dt>${ic('pencil')}작성 분량</dt><dd>${e.length}</dd></div>
+              <div><dt>${ic('gradCap')}총점</dt><dd>${num(TOTAL_SCORE)}점</dd></div>
+            </dl>
+          </div>
+          <!-- 이 대학의 다른 시험 (있을 때만 노출) -->
+          ${related.length ? `<section class="rel-card">
+            <h2>이 대학의 다른 시험</h2>
+            <ul class="related">
+              ${related.map((r, i) => `<li data-rel="${i}">
+                <div class="related-meta"><span class="chip">${r.ai ? AI_MARK : ''}${e.school}</span><span class="year">${r.year}학년도</span></div>
+                <p class="related-title">${baseTitle}</p>
+              </li>`).join('')}
+            </ul>
+          </section>` : ''}
+        </aside>
+
+        <!-- 좌측: 탭 -->
+        <div class="d-main">
+          <div class="panel">
+            ${tabsHTML}
+            <div class="tab-body">${tabBody(currentTab, e, th, st, qs, examType)}</div>
+          </div>
+
+        </div>
+      </div>`;
+    $detail._related = related;
+
+  }
+
+  function tabBody(key, e, th, st, qs, examType) {
+    if (key === 'overview') {
+      const meta = !e.noMeta;
+      return `
+      ${meta ? `<h2 class="sec-title">관련 교과</h2>
+      <div class="pills">${th.subjects.map(x => `<span class="pill">${x}</span>`).join('')}</div>
+      <h2 class="sec-title">핵심 개념</h2>
+      <div class="pills">${th.concepts.map(x => `<span class="pill">${x}</span>`).join('')}</div>` : ''}
+      <h2 class="sec-title">문제 구성</h2>
+      <table class="tbl">
+        <thead><tr><th style="width:24%">문제</th><th style="width:34%">대학 기준 점수</th><th>적정 분량</th></tr></thead>
+        <tbody>${qs.map(q => `<tr><th>문제 ${q.no}</th><td>${num(q.score)}점</td><td>${q.len}</td></tr>`).join('')}</tbody>
+      </table>
+      <h2 class="sec-title">출제 범위 및 유의사항</h2>
+      <div class="note-box"><ul class="dots">
+        <li>제시문을 바탕으로 자신의 견해를 논리적으로 구성하여 논술하는 문제입니다.</li>
+        <li>제시문은 인문·사회 전반의 주제를 다루며, 자료의 해석과 비판적 사고가 요구됩니다.</li>
+        <li>문제별 요구되는 분량을 준수하여 답안을 작성하시기 바랍니다.</li>
+        <li>표절, 무단 인용 등 부정행위가 확인될 경우 채점에서 불이익이 있을 수 있습니다.</li>
+        <li>제시된 정보는 문제 이해를 돕기 위한 참고 자료이며, 실제 시험과 일부 차이가 있을 수 있습니다.</li>
+        ${examType === '모의논술' ? '<li>실제 대학의 출제 경향을 반영한 모의논술로, 대학의 공식 출제 자료가 아닙니다.</li>' : ''}
+      </ul></div>`;
+    }
+
+    if (key === 'intent') return `
+      <h2 class="sec-title">출제 방향</h2>
+      <p class="body-text">이 시험은 ‘${th.topic}’을(를) 중심 주제로, 고등학교 교육과정에서 다루는 개념을 바탕으로 제시문을 정확히 읽고 논리적으로 사고하는 능력을 종합적으로 평가하고자 출제되었습니다. 특정 배경지식의 유무보다 제시문에 대한 이해와 이를 근거로 한 논증의 타당성을 중점적으로 확인합니다.</p>
+      <h2 class="sec-title">문제별 출제의도</h2>
+      ${qs.map(q => `<div class="q-block"><div class="q-head"><b>문제 ${q.no}</b><span class="q-badge">${q.type.name}</span><span class="q-meta">${num(q.score)}점 · ${q.len}</span></div><p class="body-text">${q.type.intent}</p></div>`).join('')}
+      <h2 class="sec-title">교육과정 연계</h2>
+      <div class="note-box"><ul class="dots">${th.subjects.slice(0, 4).map(s => `<li><b>${s}</b> 교과의 성취기준과 연계하여 출제되었습니다.</li>`).join('')}</ul></div>`;
+
+    if (key === 'explain') return `
+      <p class="body-text" style="margin-bottom:16px">문제와 제시문은 응시 화면에서 확인할 수 있으며, 여기서는 문제 유형별 접근 방법만 안내합니다.</p>
+      ${qs.map(q => `<div class="q-block">
+        <div class="q-head"><b>문제 ${q.no}</b><span class="q-badge">${q.type.name}</span><span class="q-meta">${num(q.score)}점 · ${q.len}</span></div>
+        <p class="q-sub">접근 방법</p><p class="body-text">${q.type.how}</p>
+        <p class="q-sub">자주 하는 실수</p><p class="body-text">${q.type.miss}</p>
+      </div>`).join('')}`;
+
+    if (key === 'rubric') return qs.map(q => {
+      const a = Math.round(q.score * 0.4 / 10) * 10, b = a, c = q.score - a - b;
+      return `<div class="q-block">
+        <div class="q-head"><b>문제 ${q.no}</b><span class="q-badge">${q.type.name}</span><span class="q-meta">${num(q.score)}점 만점</span></div>
+        <table class="tbl">
+          <thead><tr><th style="width:22%">평가 항목</th><th>세부 기준</th><th style="width:16%">배점</th></tr></thead>
+          <tbody>
+            <tr><th>이해·분석</th><td class="left">제시문의 핵심 논지를 정확히 파악하고 문제의 요구 사항에 맞게 분석하였는가</td><td>${a}점</td></tr>
+            <tr><th>논증·구성</th><td class="left">주장과 근거가 타당하게 연결되며 글의 전개가 논리적으로 구성되었는가</td><td>${b}점</td></tr>
+            <tr><th>표현·분량</th><td class="left">문장이 명료하고 어문 규범을 지켰으며 적정 분량(${q.len})을 준수하였는가</td><td>${c}점</td></tr>
+          </tbody>
+        </table>
+      </div>`;
+    }).join('');
+
+  }
+
+  // 상세 화면 안의 클릭 처리
+  $detail.addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-go="list"]')) { openList(); return; }
+    const tab = ev.target.closest('.tab[data-tab]');
+    if (tab) {
+      currentTab = tab.dataset.tab; renderDetail();
+      const top = $detail.querySelector('.panel').getBoundingClientRect().top;
+      if (top < 80) window.scrollBy(0, top - 80);              // 탭이 붙어 있는 상태면 내용 맨 위로
+      return;
+    }
+    if (ev.target.closest('.btn-heart')) {                       // 찜 토글 (목록 카드에도 반영)
+      current.liked = !current.liked;
+      $detail.querySelectorAll('.btn-heart').forEach(b => b.classList.toggle('on', current.liked));
+      return;
+    }
+    const rel = ev.target.closest('[data-rel]');
+    if (rel) {                                                   // 이 대학의 다른 시험 → 그 문제의 상세보기로 이동
+      const r = $detail._related[rel.dataset.rel];
+      openDetail(Object.assign({}, current, { year: r.year, ai: !!r.ai, docs: undefined, noRelated: false, liked: false }));
+    }
+  });
+  document.querySelector('.gnb [data-go="list"]').addEventListener('click', openList);
+  document.querySelector('.logo').addEventListener('click', openList);
+</script>
+</body>
+</html>
