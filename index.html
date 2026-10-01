@@ -140,19 +140,26 @@
 
   .year { font-size: 12px; font-weight: 500; line-height: 18px; color: var(--text-secondary); }
 
-  .card-title-area { display: flex; flex-direction: column; justify-content: space-between; height: 120px; }
+  .card-title-area { display: flex; flex-direction: column; gap: 20px; height: 120px; }   /* 피그마 Card-1: 제목 아래 20px에 상태 배지 */
   .card-title {
     height: 60px; font-size: 20px; font-weight: 600; line-height: 30px; color: var(--text-primary);
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
-  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; height: 20px; }  /* 태그 자리 (현재 데이터 없음) */
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; height: 20px; }
+  /* 시험 상태 배지 (피그마 Card/Small-Badge 기준): 신규 / 추천 / 인기 */
+  .s-badge { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid; border-radius: 4px; font-size: 12px; font-weight: 500; line-height: 18px; white-space: nowrap; }
+  .s-badge.new { background: #CAE5FA; color: #0847A6; border-color: rgba(8, 71, 166, .2); }
+  .s-badge.rec { background: #E6F4ED; color: #008B48; border-color: rgba(0, 139, 72, .2); }
+  .s-badge.hot { background: #FDECCB; color: #E96300; border-color: rgba(233, 99, 0, .2); }
+  .detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 
   .info {
     display: flex; flex-direction: column; justify-content: center; gap: 4px; flex-shrink: 0;
     width: 100%; height: 68px; padding: 0 10px;
     background: var(--bg-secondary); border-radius: 8px;
   }
-  .info-row { display: flex; align-items: center; gap: 24px; white-space: nowrap; font-size: 14px; font-weight: 500; line-height: 22.4px; color: var(--text-secondary); }
+  /* 윗줄: 문제 수 · 시험 시간 · 총점 (간격 16px) / 아랫줄: 작성 분량 */
+  .info-row { display: flex; align-items: center; gap: 16px; white-space: nowrap; font-size: 14px; font-weight: 500; line-height: 22.4px; color: var(--text-secondary); }
   .info-row span { display: flex; align-items: center; gap: 4px; }
   .info-row svg { color: var(--text-disabled); }
   .info-len { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
@@ -392,6 +399,7 @@
 
   /* 시험 데이터 (기출변형 1개 + 기출문제 1개)
      - liked : 찜 여부
+     - tags  : 시험 상태 배지. '신규' / '추천' / '인기' 중 해당하는 것만
      - ai    : true면 기출변형 (학교 배지에 반짝이+AI 표시). 생략하면 기출문제
      - docs  : 탭별 자료 등록 여부 (false면 해당 탭 비활성). 생략하면 전부 등록
      - noMeta: true면 문제 특징·관련 교과·핵심 개념·이 대학의 다른 시험 데이터가 없는 시험
@@ -400,7 +408,7 @@
      - docs  : 탭별 자료 등록 여부 (false면 해당 탭 비활성)
      - scores: 문제별 배점. 생략하면 1,000점을 문제 수로 자동 분배 */
   const EXAMS = [
-    { school: '성신여자대학교',     color: '#004E96', year: 2026, title: '성신여자대학교 인문 모의논술',       questions: 2, minutes: 100, length: '1,600 ~ 2,000자', point: 50, liked: true,  theme: 'justice', ai: true, lens: [[800, 1000], [800, 1000]] },
+    { school: '성신여자대학교',     color: '#004E96', year: 2026, title: '성신여자대학교 인문 모의논술',       questions: 2, minutes: 100, length: '1,600 ~ 2,000자', point: 50, liked: true,  theme: 'justice', ai: true, tags: ['신규', '추천', '인기'], lens: [[800, 1000], [800, 1000]] },
     { school: '숙명여자대학교',     color: '#004E96', year: 2026, title: '숙명여자대학교 인문 모의논술',       questions: 4, minutes: 100, length: '1,620 ~ 1,980자', point: 50, liked: true,  theme: 'ai', docs: { intent: false, explain: false, rubric: false }, noRelated: true, scores: [280, 250, 250, 220], lens: [[270, 330], [540, 660], [270, 330], [540, 660]] },
   ];
 
@@ -453,6 +461,9 @@
   /* =====================================================================
      3. 목록 화면
      ===================================================================== */
+  const TAG_CLASS = { '신규': 'new', '추천': 'rec', '인기': 'hot' };
+  const tagsHTML = e => (e.tags || []).map(t => `<span class="s-badge ${TAG_CLASS[t]}">${t}</span>`).join('');
+
   function cardHTML(e, i) {
     return `
     <article class="card" style="--school:${e.color}" data-idx="${i}">
@@ -466,13 +477,14 @@
         </div>
         <div class="card-title-area">
           <h3 class="card-title">${e.title}</h3>
-          <div class="card-tags"></div>
+          <div class="card-tags">${tagsHTML(e)}</div>
         </div>
       </div>
       <div class="info">
         <div class="info-row">
-          <span>${ic('file')}${e.questions}문제</span>
-          <span>${ic('clock')}${e.minutes}분</span>
+          <span title="문제 수">${ic('file')}${e.questions}문제</span>
+          <span title="시험 시간">${ic('clock')}${e.minutes}분</span>
+          <span title="총점">${ic('gradCap')}${TOTAL_SCORE.toLocaleString('ko-KR')}점</span>
         </div>
         <div class="info-len">
           <span class="label">${ic('pencil')}작성 분량</span>
@@ -597,6 +609,7 @@
           <div class="detail-meta">${chip}<span class="year">${e.year}학년도</span></div>
           <h1 class="detail-title">${e.title}</h1>
           ${feature ? `<p class="feature">${feature}</p>` : ''}
+          ${e.tags && e.tags.length ? `<div class="detail-tags">${tagsHTML(e)}</div>` : ''}
         </header>
 
         <!-- 우측: 응시 카드 -->
@@ -714,7 +727,7 @@
     const rel = ev.target.closest('[data-rel]');
     if (rel) {                                                   // 이 대학의 다른 시험 → 그 문제의 상세보기로 이동
       const r = $detail._related[rel.dataset.rel];
-      openDetail(Object.assign({}, current, { year: r.year, ai: !!r.ai, docs: undefined, noRelated: false, liked: false }));
+      openDetail(Object.assign({}, current, { tags: [], year: r.year, ai: !!r.ai, docs: undefined, noRelated: false, liked: false }));
     }
   });
   document.querySelector('.gnb [data-go="list"]').addEventListener('click', openList);
